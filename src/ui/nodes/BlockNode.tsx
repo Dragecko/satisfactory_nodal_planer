@@ -58,7 +58,7 @@ function BlockNodeComponent({ id, data, selected }) {
       <div className="rf-io rf-io-left">
         {Array.from({ length: inCount }).map((_, idx) => (
           <div key={`in-${idx}`} className="rf-port" onClick={() => setInputRate(idx)} title="Cliquer pour définir le débit">
-            <Handle type="target" position={Position.Left} id={`in-${idx}`} style={{ left: 6 }} />
+            <Handle type="target" position={Position.Left} id={`in-${idx}`} />
             <span className="name">{def?.inputs?.[idx]?.label ?? `In ${idx+1}`}</span>
             <span className="rate">{inputRates[idx] ?? 0}</span>
           </div>
@@ -81,7 +81,7 @@ function BlockNodeComponent({ id, data, selected }) {
           <div key={`out-${idx}`} className="rf-port" onClick={() => setOutputRate(idx)} title="Cliquer pour définir le débit">
             <span className="name">{def?.outputs?.[idx]?.label ?? `Out ${idx+1}`}</span>
             <span className="rate">{outputRates[idx] ?? 0}</span>
-            <Handle type="source" position={Position.Right} id={`out-${idx}`} style={{ right: 6 }} />
+            <Handle type="source" position={Position.Right} id={`out-${idx}`} />
           </div>
         ))}
       </div>

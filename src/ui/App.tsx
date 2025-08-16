@@ -138,6 +138,84 @@ function MainCanvas() {
     setNodes((prev) => prev.map((n) => n.id === id ? { ...n, data: updater(n.data) } : n))
   }
 
+  // Calcul des débits par arête et du taux d'utilisation par port source
+  const computeEdgeFlows = (ns: any[], es: any[]) => {
+    const idToNode: Record<string, any> = Object.fromEntries(ns.map((n) => [n.id, n]))
+    // Regrouper par port source
+    type GroupEdge = { edge: any, demand: number, targetIdx: number }
+    const groups: Record<string, { capacity: number, edges: GroupEdge[], sourceIdx: number }> = {}
+
+    const parseIdx = (h?: string) => {
+      if (!h) return 0
+      const p = h.split('-')
+      const v = parseInt(p[p.length - 1] || '0', 10)
+      return Number.isFinite(v) ? v : 0
+    }
+
+    for (const e of es) {
+      const source = idToNode[e.source]
+      const target = idToNode[e.target]
+      if (!source || !target) continue
+      const sIdx = parseIdx(e.sourceHandle)
+      const tIdx = parseIdx(e.targetHandle)
+      const capacity = Math.max(0, Number(source.data?.outputRates?.[sIdx] ?? 0))
+      const demand = Math.max(0, Number(target.data?.inputRates?.[tIdx] ?? 0))
+      const key = `${e.source}:${sIdx}`
+      if (!groups[key]) groups[key] = { capacity, edges: [], sourceIdx: sIdx }
+      groups[key].edges.push({ edge: e, demand, targetIdx: tIdx })
+    }
+
+    // Distribuer la capacité aux arêtes d'un même port source, par demande décroissante
+    const edgeIdToFlow: Record<string, { flow: number, utilPct: number }> = {}
+    for (const key of Object.keys(groups)) {
+      const { capacity } = groups[key]
+      const edgesInGroup = groups[key].edges.sort((a, b) => b.demand - a.demand)
+      let remaining = capacity
+      let usedTotal = 0
+      const perEdgeFlow: Record<string, number> = {}
+      for (const ge of edgesInGroup) {
+        const take = Math.max(0, Math.min(ge.demand, remaining))
+        remaining -= take
+        usedTotal += take
+        perEdgeFlow[ge.edge.id] = take
+      }
+      const utilPctGroup = capacity > 0 ? (usedTotal / capacity) * 100 : 0
+      for (const ge of edgesInGroup) {
+        edgeIdToFlow[ge.edge.id] = { flow: perEdgeFlow[ge.edge.id] || 0, utilPct: utilPctGroup }
+      }
+    }
+
+    // Générer les nouvelles arêtes avec labels/styles
+    const withLabels = es.map((e) => {
+      const metrics = edgeIdToFlow[e.id] || { flow: 0, utilPct: 0 }
+      const flow = Math.round(metrics.flow * 100) / 100
+      const util = Math.min(100, Math.round(metrics.utilPct))
+      const label = `${flow}/min • ${util}%`
+      // Couleur selon utilisation (0% rouge → 100% vert), uniforme par port source
+      const hue = Math.min(100, util) * 1.2 // 0→rouge, 100→vert
+      const stroke = `hsl(${hue} 80% 55%)`
+      return {
+        ...e,
+        label,
+        labelBgPadding: [4, 6],
+        labelBgBorderRadius: 6,
+        labelBgStyle: { fill: 'rgba(0,0,0,.45)', stroke: 'rgba(255,255,255,.08)' },
+        labelStyle: { fill: '#e7ebf3', fontSize: 11 },
+        style: { ...(e.style || {}), stroke, strokeWidth: 2 }
+      }
+    })
+    return withLabels
+  }
+
+  // Appliquer les labels/styling calculés sans boucle infinie
+  useEffect(() => {
+    const computed = computeEdgeFlows(nodes, edges)
+    // comparer labels pour éviter set inutile
+    const a = edges.map((e) => `${e.id}:${e.label ?? ''}`).join('|')
+    const b = computed.map((e) => `${e.id}:${e.label ?? ''}`).join('|')
+    if (a !== b) setEdges(computed)
+  }, [nodes, edges, setEdges])
+
   const nodeTypes = useMemo(() => ({ block: BlockNode }), [])
 
   return (

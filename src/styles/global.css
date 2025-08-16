@@ -128,7 +128,10 @@ body{
 .rf-io{ display:flex; flex-direction:column; gap:8px; justify-content:center }
 .rf-io-left{ padding-left:8px }
 .rf-io-right{ padding-right:8px }
-.rf-port{ display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border) }
+.rf-port{ position:relative; display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border) }
+.rf-port .react-flow__handle{ position:absolute }
+.rf-io-left .react-flow__handle{ left:-6px }
+.rf-io-right .react-flow__handle{ right:-6px }
 .rf-port:hover{ background:rgba(255,255,255,0.06); border-color:#2d3a50; cursor:pointer }
 .rf-port .name{ font-size:12px }
 .rf-port .rate{ font-size:12px; color:var(--muted) }
