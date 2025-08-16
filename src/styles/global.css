@@ -1,0 +1,140 @@
+:root{
+  --bg:#0f1216;
+  --panel:#141922;
+  --panel-2:#1b2230;
+  --text:#e7ebf3;
+  --muted:#a8b3cf;
+  --accent:#39c6ff;
+  --accent-2:#67f3a2;
+  --border:#232b3a;
+}
+
+html,body,#root{
+  height:100%;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.layout{
+  display:grid;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: 56px 1fr;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  height:100%;
+}
+
+.header{
+  grid-area: header;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+}
+
+.sidebar{
+  grid-area: sidebar;
+  border-right:1px solid var(--border);
+  background:linear-gradient(180deg, var(--panel), var(--panel-2));
+  padding:12px;
+  overflow:auto;
+}
+
+.main{
+  grid-area: main;
+  position:relative;
+}
+
+.brand{
+  display:flex;
+  gap:12px;
+  align-items:center;
+}
+
+.brand .logo{
+  width:28px; height:28px;
+  display:grid; place-items:center;
+  border-radius:8px; border:1px solid var(--border);
+  background: radial-gradient( circle at 30% 30%, rgba(103,243,162,0.2), rgba(57,198,255,0.1) );
+}
+
+.brand h1{font-size:16px; font-weight:600; margin:0}
+.muted{color:var(--muted)}
+
+.sidebar .section{margin-bottom:16px}
+.sidebar .section h3{margin:8px 8px 6px; font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.08em; text-transform:uppercase}
+.sidebar .card{
+  background: rgba(255,255,255,0.02);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px;
+}
+
+.node-toolbar{
+  display:flex; gap:8px; flex-wrap:wrap;
+}
+
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 10px; font-size:13px; color:var(--text);
+  border:1px solid var(--border); border-radius:8px;
+  background:rgba(255,255,255,0.03);
+  cursor:pointer;
+}
+.btn:hover{border-color:#2d3a50; background:rgba(255,255,255,0.05)}
+.btn.primary{border-color:rgba(57,198,255,.4); background:linear-gradient(180deg, rgba(57,198,255,.15), rgba(103,243,162,.10))}
+
+.react-flow__panel{background:rgba(0,0,0,.35); border:1px solid var(--border); padding:6px 10px; border-radius:8px}
+
+/* Grille de blocs dans la sidebar */
+.blocks-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:8px;
+}
+.block-tile{
+  display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+  padding:10px; border:1px solid var(--border); border-radius:10px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  cursor:pointer; color:var(--text);
+}
+.block-tile:hover{border-color:#2d3a50; background:rgba(255,255,255,0.05)}
+.block-tile .icon{font-size:18px}
+.block-tile .name{font-size:13px; font-weight:600}
+.block-tile .category{font-size:11px; color:var(--muted)}
+
+/* Node visuel */
+.rf-block{
+  position:relative;
+  min-width:280px;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02));
+}
+.rf-block.selected{ box-shadow:0 0 0 2px rgba(103,243,162,.35) inset; }
+
+.rf-grid{ display:grid; grid-template-columns: 1fr 2fr 1fr; align-items:stretch; gap:8px }
+
+.rf-io{ display:flex; flex-direction:column; gap:8px; justify-content:center }
+.rf-io-left{ padding-left:8px }
+.rf-io-right{ padding-right:8px }
+.rf-port{ display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:8px; padding:6px 8px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border) }
+.rf-port:hover{ background:rgba(255,255,255,0.06); border-color:#2d3a50; cursor:pointer }
+.rf-port .name{ font-size:12px }
+.rf-port .rate{ font-size:12px; color:var(--muted) }
+
+.rf-content{ display:flex; flex-direction:column; gap:8px; padding:6px 4px }
+.rf-header{ font-size:16px; font-weight:700; text-align:center; padding:6px 8px; border:1px solid var(--border); border-radius:10px; background:rgba(255,255,255,0.04) }
+.rf-desc{ font-size:12px; color:var(--muted); text-align:center; padding:8px; border:1px dashed var(--border); border-radius:10px; min-height:40px }
+
+
