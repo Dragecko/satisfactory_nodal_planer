@@ -1,22 +1,52 @@
-export * from './types'
-export { Miner } from './miner'
-export { Smelter } from './smelter'
-export { Foundry } from './foundry'
-export { Assembler } from './assembler'
-export { TrainFreight } from './train_freight'
+import { BlockModel, BlockType } from './types';
+import MinerModel from './base/Miner';
+import SmelterModel from './base/Smelter';
+import FoundryModel from './base/Foundry';
+import AssemblerModel from './base/Assembler';
+import TrainFreightModel from './base/TrainFreight';
 
-import { Miner } from './miner'
-import { Smelter } from './smelter'
-import { Foundry } from './foundry'
-import { Assembler } from './assembler'
-import { TrainFreight } from './train_freight'
+/**
+ * Bibliothèque des blocs de base
+ */
+export const BASE_BLOCKS: Record<BlockType, BlockModel> = {
+  Miner: MinerModel,
+  Smelter: SmelterModel,
+  Foundry: FoundryModel,
+  Assembler: AssemblerModel,
+  TrainFreight: TrainFreightModel
+};
 
-export const ALL_BLOCKS = [
-  Miner,
-  Smelter,
-  Foundry,
-  Assembler,
-  TrainFreight
-]
+/**
+ * Obtient un bloc de base par type
+ */
+export function getBaseBlock(type: BlockType): BlockModel {
+  return BASE_BLOCKS[type];
+}
+
+/**
+ * Liste tous les types de blocs disponibles
+ */
+export function getAvailableBlockTypes(): BlockType[] {
+  return Object.keys(BASE_BLOCKS) as BlockType[];
+}
+
+/**
+ * Crée une copie d'un bloc avec un nouvel ID
+ */
+export function cloneBlockModel(model: BlockModel, newName?: string): BlockModel {
+  return {
+    ...model,
+    name: newName || `${model.name} (Copie)`,
+    inputs: model.inputs.map(port => ({ ...port })),
+    outputs: model.outputs.map(port => ({ ...port }))
+  };
+}
+
+/**
+ * Type MIME utilisé pour glisser-déposer un bloc depuis la sidebar
+ */
+export const DRAG_BLOCK_MIME = 'application/x-snp-block';
+
+export default BASE_BLOCKS;
 
 

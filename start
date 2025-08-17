@@ -1,0 +1,36 @@
+#!/bin/bash
+
+echo "🚀 Démarrage universel de Satisfactory Nodal Planner"
+echo "==================================================="
+
+# Détecter l'environnement
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    echo "🪟 Environnement Windows détecté"
+    if command -v powershell &> /dev/null; then
+        echo "📜 Lancement via PowerShell..."
+        powershell -ExecutionPolicy Bypass -File "start.ps1"
+    else
+        echo "📜 Lancement via batch..."
+        ./start.bat
+    fi
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "🐧 Environnement Linux détecté"
+    if [[ -f /proc/version ]] && grep -qi microsoft /proc/version; then
+        echo "🪟 WSL détecté - Lancement via PowerShell..."
+        if command -v powershell.exe &> /dev/null; then
+            powershell.exe -ExecutionPolicy Bypass -File "start.ps1"
+        else
+            echo "📜 PowerShell non trouvé, lancement via bash..."
+            ./start-auto.sh
+        fi
+    else
+        echo "🐧 Linux natif - Lancement via bash..."
+        ./start-auto.sh
+    fi
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "🍎 Environnement macOS détecté"
+    ./start-auto.sh
+else
+    echo "❓ Environnement non reconnu, tentative avec bash..."
+    ./start-auto.sh
+fi
