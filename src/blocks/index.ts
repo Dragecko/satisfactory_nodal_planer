@@ -4,6 +4,7 @@ import SmelterModel from './base/Smelter';
 import FoundryModel from './base/Foundry';
 import AssemblerModel from './base/Assembler';
 import TrainFreightModel from './base/TrainFreight';
+import { getCustomModels } from './Library';
 
 /**
  * Bibliothèque des blocs de base
@@ -15,6 +16,17 @@ export const BASE_BLOCKS: Record<BlockType, BlockModel> = {
   Assembler: AssemblerModel,
   TrainFreight: TrainFreightModel
 };
+
+/**
+ * Bibliothèque complète des blocs (base + personnalisés)
+ */
+export function getAllBlocks(): Record<string, BlockModel> {
+  const customModels = getCustomModels();
+  return {
+    ...BASE_BLOCKS,
+    ...customModels
+  };
+}
 
 /**
  * Obtient un bloc de base par type

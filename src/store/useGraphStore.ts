@@ -4,6 +4,14 @@ import { NodeData, EdgeData, BlockModel, GraphState, HistoryState } from '../blo
 import { validateFullConnection } from '../engine/validate';
 import { calculateFlows } from '../engine/flow';
 import { addToHistory, canUndo, canRedo, undo, redo } from './history';
+import { 
+  saveCustomModelWithElectron,
+  deleteCustomModelWithElectron,
+  loadCustomModelsWithElectron,
+  validateCustomBlock,
+  isElectronApp
+} from '../lib/electronModels';
+import { getCustomModels } from '../blocks/Library';
 
 /**
  * Store Zustand pour la gestion du graphe
@@ -31,9 +39,11 @@ interface GraphStore extends GraphState {
   canRedo: () => boolean;
   
   // Actions pour les modèles personnalisés
-  saveCustomModel: (name: string, model: BlockModel) => void;
+  saveCustomModel: (name: string, model: BlockModel) => Promise<void>;
   deleteCustomModel: (name: string) => void;
   loadCustomModels: () => void;
+  importCustomModel: (file: File) => Promise<{ name: string; model: BlockModel }>;
+  exportCustomModel: (name: string) => Promise<void>;
   
   // Actions utilitaires
   recalculateFlows: () => void;
@@ -269,46 +279,158 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     return canRedo(state.history, state.historyIndex);
   },
 
-  // Actions pour les modèles personnalisés
-  saveCustomModel: (name: string, model: BlockModel) => {
-    const key = `snp:custom:${name}`;
-    localStorage.setItem(key, JSON.stringify(model));
-    
-    set(state => ({
-      ...state,
-      customModels: { ...state.customModels, [name]: model }
-    }));
-  },
-
-  deleteCustomModel: (name: string) => {
-    const key = `snp:custom:${name}`;
-    localStorage.removeItem(key);
-    
-    set(state => {
-      const newCustomModels = { ...state.customModels };
-      delete newCustomModels[name];
-      return { ...state, customModels: newCustomModels };
-    });
-  },
-
-  loadCustomModels: () => {
-    const customModels: Record<string, BlockModel> = {};
-    
-    // Charger tous les modèles personnalisés depuis localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('snp:custom:')) {
-        try {
-          const name = key.replace('snp:custom:', '');
-          const model = JSON.parse(localStorage.getItem(key)!);
-          customModels[name] = model;
-        } catch (error) {
-          console.warn('Erreur lors du chargement du modèle personnalisé:', key);
-        }
+  // Actions pour les modèles personnalisés (système Electron)
+  saveCustomModel: async (name: string, model: BlockModel) => {
+    try {
+      // Valider le modèle avant sauvegarde
+      const validation = validateCustomBlock(model);
+      if (!validation.isValid) {
+        throw new Error(`Modèle invalide: ${validation.errors.join(', ')}`);
       }
+      
+      // Vérifier si on est dans Electron
+      if (isElectronApp()) {
+        // Sauvegarde via Electron
+        const result = await saveCustomModelWithElectron(name, model);
+        
+        if (result.success) {
+          // Mettre à jour le store
+          set(state => ({
+            ...state,
+            customModels: { ...state.customModels, [name]: model }
+          }));
+          
+          console.log(`✅ Modèle "${name}" sauvegardé avec succès via Electron`);
+        } else {
+          throw new Error(result.message);
+        }
+        
+        return result;
+      } else {
+        // Mode web - sauvegarde temporaire
+        console.warn('⚠️ Mode web détecté, sauvegarde temporaire uniquement');
+        
+        set(state => ({
+          ...state,
+          customModels: { ...state.customModels, [name]: model }
+        }));
+        
+        console.log(`💾 Modèle "${name}" sauvegardé temporairement (mode web)`);
+        
+        return {
+          success: true,
+          message: 'Modèle sauvegardé temporairement (mode web)'
+        };
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du modèle:', error);
+      throw error;
+    }
+  },
+
+  deleteCustomModel: async (name: string) => {
+    try {
+      // Vérifier si on est dans Electron
+      if (isElectronApp()) {
+        // Suppression via Electron
+        const result = await deleteCustomModelWithElectron(name);
+        
+        if (result.success) {
+          // Supprimer du store
+          set(state => {
+            const newCustomModels = { ...state.customModels };
+            delete newCustomModels[name];
+            return { ...state, customModels: newCustomModels };
+          });
+          
+          console.log(`🗑️ Modèle "${name}" supprimé avec succès via Electron`);
+        } else {
+          throw new Error(result.message);
+        }
+        
+        return result;
+      } else {
+        // Mode web - suppression du store uniquement
+        set(state => {
+          const newCustomModels = { ...state.customModels };
+          delete newCustomModels[name];
+          return { ...state, customModels: newCustomModels };
+        });
+        
+        console.log(`🗑️ Modèle "${name}" supprimé du store (mode web)`);
+        
+        return {
+          success: true,
+          message: 'Modèle supprimé du store (mode web)'
+        };
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression du modèle:', error);
+      throw error;
+    }
+  },
+
+  loadCustomModels: async () => {
+    try {
+      // Vérifier si on est dans Electron
+      if (isElectronApp()) {
+        // Charger via Electron
+        const electronModels = await loadCustomModelsWithElectron();
+        
+        set(state => ({ ...state, customModels: electronModels }));
+        console.log(`📚 ${Object.keys(electronModels).length} modèles chargés via Electron`);
+      } else {
+        // Mode web - charger depuis les fichiers statiques
+        const fileModels = getCustomModels();
+        
+        set(state => ({ ...state, customModels: fileModels }));
+        console.log(`📚 ${Object.keys(fileModels).length} modèles chargés depuis les fichiers (mode web)`);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des modèles:', error);
+    }
+  },
+
+  // Nouvelles actions pour la gestion des fichiers
+  importCustomModel: async (file: File) => {
+    try {
+      const { name, model } = await importCustomModelFromFile(file);
+      
+      // Valider le modèle importé
+      const validation = validateCustomBlock(model);
+      if (!validation.isValid) {
+        throw new Error(`Modèle invalide: ${validation.errors.join(', ')}`);
+      }
+      
+      // Ajouter au store
+      set(state => ({
+        ...state,
+        customModels: { ...state.customModels, [name]: model }
+      }));
+      
+      console.log(`Modèle "${name}" importé avec succès`);
+      return { name, model };
+    } catch (error) {
+      console.error('Erreur lors de l\'import du modèle:', error);
+      throw error;
+    }
+  },
+
+  exportCustomModel: async (name: string) => {
+    const state = get();
+    const model = state.customModels[name];
+    
+    if (!model) {
+      throw new Error(`Modèle "${name}" non trouvé`);
     }
     
-    set(state => ({ ...state, customModels }));
+    try {
+      await exportCustomModelToFile(name, model);
+      console.log(`Modèle "${name}" exporté vers fichier avec succès`);
+    } catch (error) {
+      console.error('Erreur lors de l\'export du modèle:', error);
+      throw error;
+    }
   },
 
   // Actions utilitaires

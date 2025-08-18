@@ -5,6 +5,7 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   root: process.cwd(),
+  base: './',
   build: {
     outDir: 'dist',
     rollupOptions: {
